@@ -1,0 +1,58 @@
+---
+title: "Titanic Analysis in R"
+author: "Michael Roberto"
+date: "2025-09-04"
+output:
+  html_document: default
+  pdf_document: default
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r}
+# Step 1: Download dataset
+url <- "https://www.openml.org/data/get_csv/16826755/phpMYEkMl"
+titanic_data <- read.csv(url)
+
+#Step 3: Descriptive Statistics
+# Quantitative variables
+summary(titanic_data$age)
+summary(titanic_data$fare)
+
+```
+```{r}
+#Step 3: Descriptive Statistics
+# Quantitative variables
+summary(titanic_data$age)
+summary(titanic_data$fare)
+
+# Categorical variables
+table(titanic_data$sex)
+table(titanic_data$pclass)
+
+```
+```{r}
+#Step 4: Transform a Variable
+names(titanic_data)[1] <- "Passenger Class"
+
+```
+```{r}
+# Step 4: Plotting
+# Histogram of Survivers
+hist(titanic_data$survived,
+     main = "Surviver Distribution",
+     xlab = "survived",
+     col = "lightblue",
+     border = "black")
+
+# Scatterplot of Age vs Fare
+plot(titanic_data$survived, titanic_data$fare,
+     main = "Survived vs Fare",
+     xlab = "Survived",
+     ylab = "Fare",
+     col = "darkgreen",
+     pch = 19)
+
+```
+
+
