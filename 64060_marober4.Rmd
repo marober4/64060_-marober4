@@ -1,58 +1,37 @@
 ---
-title: "Titanic Analysis in R"
+title: "Wine Analysis in R"
 author: "Michael Roberto"
-date: "2025-09-04"
-output:
-  html_document: default
-  pdf_document: default
+date: "2025-09-05"
+output: html_document
+---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 ```{r}
-# Step 1: Download dataset
-url <- "https://www.openml.org/data/get_csv/16826755/phpMYEkMl"
-titanic_data <- read.csv(url)
+#Step1 - download data file
+url <- "https://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-red.csv"
+download.file(url, destfile = "winequality-red.csv")
+#Import into R
+wine <- read.csv("winequality-red.csv", sep = ";")
+head(wine)
+```
+```{r}
+#Descriptive statistics - quantitative summary
+summary(wine$alcohol)
 
-#Step 3: Descriptive Statistics
-# Quantitative variables
-summary(titanic_data$age)
-summary(titanic_data$fare)
+#Descriptive statistics - categorical summary
+summary(wine$quality)
 
 ```
 ```{r}
-#Step 3: Descriptive Statistics
-# Quantitative variables
-summary(titanic_data$age)
-summary(titanic_data$fare)
-
-# Categorical variables
-table(titanic_data$sex)
-table(titanic_data$pclass)
-
+#Transform a variable
+wine$log_sugar <- log(wine$residual.sugar + 1)
 ```
 ```{r}
-#Step 4: Transform a Variable
-names(titanic_data)[1] <- "Passenger Class"
+#Plotting - histogram and scatterplot
+hist(wine$alcohol, main = "Alcohol Content", xlab = "Alcohol", col = "red")
 
+plot(wine$alcohol, wine$pH, main = "Alcohol vs Sugar", xlab = "Alcohol", ylab = "Residual.sugar", col = "blue")
 ```
-```{r}
-# Step 4: Plotting
-# Histogram of Survivers
-hist(titanic_data$survived,
-     main = "Surviver Distribution",
-     xlab = "survived",
-     col = "lightblue",
-     border = "black")
-
-# Scatterplot of Age vs Fare
-plot(titanic_data$survived, titanic_data$fare,
-     main = "Survived vs Fare",
-     xlab = "Survived",
-     ylab = "Fare",
-     col = "darkgreen",
-     pch = 19)
-
-```
-
 
