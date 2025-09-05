@@ -1,0 +1,37 @@
+---
+title: "Wine Analysis in R"
+author: "Michael Roberto"
+date: "2025-09-05"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r}
+#Step1 - download data file
+url <- "https://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-red.csv"
+download.file(url, destfile = "winequality-red.csv")
+#Import into R
+wine <- read.csv("winequality-red.csv", sep = ";")
+head(wine)
+```
+```{r}
+#Descriptive statistics - quantitative summary
+summary(wine$alcohol)
+
+#Descriptive statistics - categorical summary
+summary(wine$quality)
+
+```
+```{r}
+#Transform a variable
+wine$log_sugar <- log(wine$residual.sugar + 1)
+```
+```{r}
+#Plotting - histogram and scatterplot
+hist(wine$alcohol, main = "Alcohol Content", xlab = "Alcohol", col = "red")
+
+plot(wine$alcohol, wine$pH, main = "Alcohol vs Sugar", xlab = "Alcohol", ylab = "Residual.sugar", col = "blue")
+```
+
