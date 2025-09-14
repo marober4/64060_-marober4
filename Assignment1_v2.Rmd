@@ -1,0 +1,83 @@
+---
+title: "Hitters in R"
+author: "Michael Roberto"
+date: "2025-09-14"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r}
+getwd()
+```
+```{r}
+#load ISLR for dataset and readr/ggplots from Tidyverse
+library(ISLR)
+library(readr)
+library(ggplot2)
+```
+```{r}
+head(Hitters)
+```
+```{r}
+tail(Hitters)
+```
+```{r}
+summary(Hitters)
+```
+```{r}
+dim(Hitters)
+```
+#Used functions like head, tail, dim and summary on "Hitters" databse from ISLR
+#To find mean home runs (HmRun) of hitters
+```{r}
+mean(Hitters$HmRun)
+```
+#To find median years (years) of hitters
+```{r}
+median(Hitters$Years)
+```
+#The mean homeruns shows the average of homeruns per hitter regardless of years whereas the median years shows the number of years played in the middle of the dataset
+
+```{r}
+fetch_modes <-function(Hitters){
+uniq_hitters <- unique(Hitters)
+freq_values <-tabulate(match(Hitters,uniq_hitters))
+modes_years <- uniq_hitters[freq_values == max(freq_values)]
+return(modes_years)
+}
+mode_hits <- fetch_modes(Hitters$Hits)
+mode_hits
+```
+```{r}
+mode_salary <- fetch_modes(Hitters$Salary)
+mode_salary                        
+```
+```{r}
+mode_division <- fetch_modes(Hitters$Division)
+mode_division
+```
+```{r}
+head(Hitters)
+```
+#transformation of numerical variable
+```{r}
+Hitters$Hits <- log(Hitters$Hits)
+head(Hitters)
+```
+#plot histogram of home runs (hmrun)
+```{r}
+ggplot(Hitters, aes(x = HmRun)) +
+geom_histogram(binwidth = 5, fill = "orange", color = "blue") +
+labs(title = " Home Runs across Hitters", x = "HmRun", y = "Count") +
+theme_minimal()
+```
+#Histogram interpretation:  more hitters (slightly less than 100 total) hit 5 home runs than any number
+#scatterplot of years to home runs.  As the home runs count increases, the volume of players reaching the higher home run number decreases
+```{r}
+ggplot(Hitters, aes(x = Years, y = HmRun)) +
+geom_point(size = 1.5, color = "red") +
+labs( title = "Scatter plot of Home Runs over Years", x = "Years of Playing", y = "Home Runs")
+```
+#Interpretation: years playing seems to increase the number of home runs for a player.  In the early years, most of the home run dats is less than 10 homruns for years 0-6.  After year 6, the number of home runs is distributed over a larger range with a higher mean and median than early years.  For players with 20+ yars, the number of homeruns decreases again.  
