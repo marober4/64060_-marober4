@@ -1,0 +1,141 @@
+---
+title: "k-NN Analysis in R"
+author: "Michael Roberto"
+date: "2025-09-28"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r}
+getwd()
+```
+```{r}
+# Load all necessary libraries for the assignment
+library(class)  
+library(caret)  
+library(dplyr)   
+library(ggplot2) 
+library(readr)   
+
+```
+```{r}
+# Load dataset for assignment and remove the two unnecessary columns
+data <- read.csv("UniversalBank.csv") %>% select(-ID, -ZIP.Code)
+summary(data)
+```
+```{r}
+# Convert categorical variable (Education) into three dummy variables
+data <- data %>%
+  mutate(
+    Education_1 = ifelse(Education == 1, 1, 0),
+    Education_2 = ifelse(Education == 2, 1, 0),
+    Education_3 = ifelse(Education == 3, 1, 0)
+  ) %>%
+  select(-Education)
+
+```
+```{r}
+#Normalize the numerical predictions
+normalize <- function(x) { (x - min(x)) / (max(x) - min(x)) }
+data[, 1:7] <- as.data.frame(lapply(data[, 1:7], normalize))
+
+```
+```{r}
+# Split data into training set at 60% and validation set at 40%
+set.seed(123)
+trainIndex <- createDataPartition(data$Personal.Loan, p = 0.6, list = FALSE)
+trainData <- data[trainIndex, ]
+validData <- data[-trainIndex, ]
+
+```
+```{r}
+# Define the predictor train/valid variables
+train_X <- trainData %>% select(-Personal.Loan)
+train_Y <- trainData$Personal.Loan
+valid_X <- validData %>% select(-Personal.Loan)
+valid_Y <- validData$Personal.Loan
+
+```
+```{r}
+# Apply the k-NN where k = 1 to determine outcomes
+knn_pred_k1 <- knn(train = train_X, test = valid_X, cl = train_Y, k = 1)
+confusionMatrix(table(knn_pred_k1, valid_Y))
+
+```
+```{r}
+# Find best k by evaluating accuracy for when k is between 1 and 20
+k_values <- seq(1, 20, 2)
+accuracy_results <- data.frame(k = k_values, Accuracy = NA)
+
+for (i in seq_along(k_values)) {
+  knn_pred <- knn(train_X, valid_X, train_Y, k = k_values[i])
+  accuracy_results$Accuracy[i] <- sum(knn_pred == valid_Y) / length(valid_Y)
+}
+accuracy_results
+```
+#Based on results above, K1 has the highest accuracy whoich balances overfitting and ignoring predictor information
+```{r}
+# Plot accuracy vs k
+ggplot(accuracy_results, aes(x = k, y = Accuracy)) +
+  geom_line() + geom_point() +
+  ggtitle("Best k") +
+  xlab("Number of Neighbors (k)") +
+  ylab("Accuracy")
+```
+```{r}
+# Choose best k and evaluate performance
+best_k <- accuracy_results$k[which.max(accuracy_results$Accuracy)]
+knn_pred_best_k <- knn(train_X, valid_X, train_Y, k = best_k)
+confusionMatrix(table(knn_pred_best_k, valid_Y))
+```
+```{r}
+# Classify a new customer using the best k
+new_customer <- data.frame(
+  Age = normalize(40), Experience = normalize(10), Income = normalize(84),
+  Family = normalize(2), CCAvg = normalize(2), Mortgage = normalize(0),
+  Securities.Account = 0, CD.Account = 0, Online = 1, CreditCard = 1,
+  Education_1 = 0, Education_2 = 1)
+```
+```{r}
+# Repartition data between 50 training, 30 validation and 20 test
+set.seed(123)
+trainIndex <- createDataPartition(data$Personal.Loan, p = 0.5, list = FALSE)
+trainData <- data[trainIndex, ]
+remainingData <- data[-trainIndex, ]
+validIndex <- createDataPartition(remainingData$Personal.Loan, p = 0.6, list = FALSE)
+validData <- remainingData[validIndex, ]
+testData <- remainingData[-validIndex, ]
+```
+```{r}
+# Train and evaluate k-NN on new the 50/30/20 partitions
+train_X <- trainData %>% select(-Personal.Loan)
+train_Y <- trainData$Personal.Loan
+valid_X <- validData %>% select(-Personal.Loan)
+valid_Y <- validData$Personal.Loan
+test_X <- testData %>% select(-Personal.Loan)
+test_Y <- testData$Personal.Loan
+```
+```{r}
+knn_test_pred <- knn(train_X, test_X, train_Y, k = best_k)
+confusionMatrix(table(knn_test_pred, test_Y))
+```
+```{r}
+#Comparison of confusion matrix between train/test/validation sets
+knn_train_pred <- knn(train_X, train_X, train_Y, k = best_k)
+train_conf_matrix <- confusionMatrix(table(knn_train_pred, train_Y))
+
+knn_valid_pred <- knn(train_X, valid_X, train_Y, k = best_k)
+valid_conf_matrix <- confusionMatrix(table(knn_valid_pred, valid_Y))
+
+knn_test_pred <- knn(train_X, test_X, train_Y, k = best_k)
+test_conf_matrix <- confusionMatrix(table(knn_test_pred, test_Y))
+```
+```{r}
+#Print of confusion matrix to compare outcomes
+print("Train Confusion Matrix:"); print(train_conf_matrix)
+print("Validation Confusion Matrix:"); print(valid_conf_matrix)
+print("Test Confusion Matrix:"); print(test_conf_matrix)
+```
+#Assessment of project data:  Test accuracy shows 'real' world performance but if test accuracy drops, the model will overfit.  Assuming validation and test accuract perform at similar levels, the model provides a good generalization of behavior.  Test accuracy is 0.96, Validation accuracy is 0.9573 and Train accuracy is 1.0.  The training set is most accurate with the validation set being least accurate.  
