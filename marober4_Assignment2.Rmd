@@ -67,18 +67,18 @@ confusionMatrix(table(knn_pred_k1, valid_Y))
 ```{r}
 # Find best k by evaluating accuracy for when k is between 1 and 20
 k_values <- seq(1, 20, 2)
-accuracy_results <- data.frame(k = k_values, Accuracy = NA)
+results <- data.frame(k = k_values, Accuracy = NA)
 
 for (i in seq_along(k_values)) {
   knn_pred <- knn(train_X, valid_X, train_Y, k = k_values[i])
-  accuracy_results$Accuracy[i] <- sum(knn_pred == valid_Y) / length(valid_Y)
+  results$Accuracy[i] <- sum(knn_pred == valid_Y) / length(valid_Y)
 }
-accuracy_results
+results
 ```
 #Based on results above, K1 has the highest accuracy whoich balances overfitting and ignoring predictor information
 ```{r}
 # Plot accuracy vs k
-ggplot(accuracy_results, aes(x = k, y = Accuracy)) +
+ggplot(results, aes(x = k, y = Accuracy)) +
   geom_line() + geom_point() +
   ggtitle("Best k") +
   xlab("Number of Neighbors (k)") +
@@ -86,7 +86,7 @@ ggplot(accuracy_results, aes(x = k, y = Accuracy)) +
 ```
 ```{r}
 # Choose best k and evaluate performance
-best_k <- accuracy_results$k[which.max(accuracy_results$Accuracy)]
+best_k <- results$k[which.max(results$Accuracy)]
 knn_pred_best_k <- knn(train_X, valid_X, train_Y, k = best_k)
 confusionMatrix(table(knn_pred_best_k, valid_Y))
 ```
