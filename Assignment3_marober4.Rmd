@@ -1,0 +1,118 @@
+---
+title: "Assignment3"
+author: "Michael Roberto"
+date: "2025-10-11"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r}
+# Load all necessary libraries for the assignment
+library(caret)
+library(dplyr)
+library(e1071)
+```
+```{r}
+# Load the assignment dataset
+bank <- read.csv("UniversalBank.csv")
+```
+```{r}
+# Partition the data and Split the data into 60% training and 40% validation sets
+set.seed(1)
+trainIndex <- createDataPartition(bank$Personal.Loan, p = 0.6, list = FALSE)
+train <- bank[trainIndex, ]
+valid <- bank[-trainIndex, ]
+```
+```{r}
+# A. Create pivot table with Online as column, CreditCard as row, Loan as secondary row
+pivot_table <- table(train$CreditCard, train$Online, train$Personal.Loan)
+
+# View the pivot table in flat format
+ftable(pivot_table)
+```
+```{r}
+# B. Probability of Loan = 1 given CC = 1 and Online = 1
+cc1_online1_loan1 <- pivot_table["1", "1", "1"]
+cc1_online1_total <- sum(pivot_table["1", "1", ])
+
+# Compute conditional probability of loan
+prob_loan_given_cc1_online1 <- cc1_online1_loan1 / cc1_online1_total
+prob_loan_given_cc1_online1 #probability of loan acceptance
+```
+```{r}
+# C. Create separate pivot tables for Loan/Online and Loan/CC
+loan_online <- table(train$Personal.Loan, train$Online)
+loan_cc <- table(train$Personal.Loan, train$CreditCard)
+loan_online #output of loan and online
+loan_cc #output of loan and credit card
+```
+```{r}
+# D. Compute conditional probabilities of each scenario
+# -------------------------------
+# i. P(CC = 1 | Loan = 1)
+p_cc_given_loan1 <- mean(train$CreditCard[train$Personal.Loan == 1])
+p_cc_given_loan1
+```
+```{r}
+# ii. P(Online = 1 | Loan = 1)
+p_online_given_loan1 <- mean(train$Online[train$Personal.Loan == 1])
+p_online_given_loan1
+```
+```{r}
+# iii. P(Loan = 1)
+p_loan1 <- mean(train$Personal.Loan == 1)
+p_loan1
+```
+```{r}
+# iv. P(CC = 1 | Loan = 0)
+p_cc_given_loan0 <- mean(train$CreditCard[train$Personal.Loan == 0])
+p_cc_given_loan0
+```
+```{r}
+# v. P(Online = 1 | Loan = 0)
+p_online_given_loan0 <- mean(train$Online[train$Personal.Loan == 0])
+p_online_given_loan0
+```
+```{r}
+# vi. P(Loan = 0)
+p_loan0 <- mean(train$Personal.Loan == 0)
+p_loan0
+```
+```{r}
+# E Naive Bayes probability where P(Loan = 1 | CC = 1, Online = 1)
+#Apply Naive Bayes logic
+numerator <- p_cc_given_loan1 * p_online_given_loan1 * p_loan1
+denominator <- numerator + (p_cc_given_loan0 * p_online_given_loan0 * p_loan0)
+
+naive_bayes_prob <- numerator / denominator
+naive_bayes_prob
+```
+```{r}
+# F Compare with pivot probability > which is more accurate?
+comparison <- data.frame(
+  PivotTable = prob_loan_given_cc1_online1,
+  NaiveBayes = naive_bayes_prob
+)
+print(comparison)
+```
+```{r}
+#Analysis of F: pivot table (empirical estimate) has a higher probability and is therefore more accurate than NaiveBayes which may over/understimate the true probability 
+
+# G. Run Naive Bayes model and predict for CC = 1, Online = 1; Prepare training data for model
+train_nb <- train %>% select(Personal.Loan, CreditCard, Online)
+train_nb$Personal.Loan <- as.factor(train_nb$Personal.Loan)
+```
+```{r}
+# Fit the Naive Bayes model
+model_nb <- naiveBayes(Personal.Loan ~ CreditCard + Online, data = train_nb)
+model_nb
+```
+```{r}
+# Predict the probability for customer where CreditCard = 1 and Online = 1
+predict(model_nb, data.frame(CreditCard = 1, Online = 1), type = "raw")
+#Output from G is higher on non-accptance (0) than output from E (0.09055), but lower than acceptance (1)
+```
+
+
