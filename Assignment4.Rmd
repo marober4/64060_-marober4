@@ -1,0 +1,91 @@
+---
+title: "Assignment 4"
+author: "Michael Roberto"
+date: "2025-10-24"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# Load required libraries
+library(readr)        # For reading CSV files
+library(dplyr)        # For data manipulation
+library(cluster)      # For clustering algorithms
+library(factoextra)   # For visualizing clustering results
+```
+```{r}
+# Load the dataset from CSV file
+p <- read_csv("Pharmaceuticals.csv")
+```
+```{r}
+head(p)
+```
+```{r}
+# Collect only the the quantitative variables (1-9) to cluster the 21 firms.
+p1 <- p[,3:11]
+head(p1)
+```
+```{r}
+#Scale all of the quantitative variables in the dataframe.
+ps <- scale(p1)
+head(ps)
+```
+```{r}
+#Determine the number of clusters to conduct the cluster analysis
+wss <- (nrow(ps)-1)*sum(apply(ps,2,var))
+wss
+```
+```{r}
+for (i in 2:15) wss[i] <- sum(kmeans(ps,centers=i)$withinss)
+wss
+```
+```{r}
+plot(1:15, wss, type="b", xlab="Clusters",ylab="WSS - Within groups sum of squares")
+```
+#Analysis: the plot shows that 5 clusters will be sufficient to capture the majority of variations in the data
+```{r}
+#K-Means Cluster Analysis - this step fits the data with 5 clusters
+fit <- kmeans(ps, 5)
+#This step provides the mean value of all quantitative variables for each of the 5 clusters
+aggregate(ps,by=list(fit$cluster),FUN=mean)
+```
+```{r}
+ps1 <- data.frame(ps, fit$cluster)
+ps1
+```
+```{r}
+clusplot(ps, fit$cluster, color=TRUE, shade=TRUE, labels=2, lines=0)
+```
+# -----------------------------
+# Analysis and Interpretation
+# -----------------------------
+
+#----Section B Analysis-------
+#Cluster 1 represents rows 1, 4, 10 and 21
+#Cluster 2 represents rows 2, 3, 5, 18 and 20
+#Cluster 3 represents rows 7, 13, 15, 16 and 19
+#Cluster 4 represents rows 6, 8, 9, 12 and 14
+#Cluster 5 represents rows 11 and 17
+#---Based on the aggregate command output, we can deduce the following from each cluster:
+#Cluster 1 has the lowest Beta, revenue growth and asset turnover
+#Cluster 2 has the highest PE ratio, but lowest ROE and profit margin
+#Cluster 3 has the lowest leverage and PE ratio
+#Cluster 4 has the lowest market cap and ROA with highest Beta and leverage
+#Cluster 5 has the highest market cap, ROE, ROA, revenue growth, profit margin and asset turnover
+
+#-----Section C Analysis-------
+#Cluster 1 represented firms that included low revenue growth and asset turnover which aligned with two firms being hold and the #others being moderate sell and buy.  3 of the firms are based in the US.  
+#Cluster 2 represented international firms that trended towards buy (3 firms) with two (US-based) being split between moderate sell and hold.  
+#Cluster 3 represented US firms primarily that trended towards hold (3 firms) with two being split between moderate sell and hold.
+#Cluster 4 represented US firms primarily that included a mixture of hold, buy and sell.
+#Cluster 5 represented a mixture of US and UK firms primarily that included a mixture of hold and buy.
+
+#----Section D Analysis-------
+#Cluster 1: US-influenced stable and slow movers
+#Cluster 2: International-influenced with growth expectations but not profitable yet
+#Cluster 3: Low Leverage cluster
+#Cluster 4: Small, volatile and debt-ridden
+#Cluster 5: Large High Growth and Profit
