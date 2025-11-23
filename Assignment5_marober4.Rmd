@@ -1,0 +1,92 @@
+---
+title: "Assignment5"
+author: "Michael Roberto"
+date: "2025-11-23"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r}
+library(cluster)
+library(dplyr)
+library(knitr)
+```
+```{r}
+# Load data
+cereals <- read.csv("Cereals.csv")
+```
+```{r}
+# Remove rows with missing values
+cereals_clean <- na.omit(cereals)
+```
+```{r}
+# Select numeric columns for clustering
+numeric_cols <- cereals_clean %>% select(calories, protein, fat, sodium, fiber, carbo, sugars, potass, vitamins, shelf, weight, cups, rating)
+```
+```{r}
+# Normalize data
+numeric_scaled <- scale(numeric_cols)
+```
+### Hierarchical clustering using Agnes
+```{r}
+agnes_single <- agnes(numeric_scaled, method = "single")
+agnes_complete <- agnes(numeric_scaled, method = "complete")
+agnes_average <- agnes(numeric_scaled, method = "average")
+agnes_ward <- agnes(numeric_scaled, method = "ward")
+
+coefficients <- c(single = agnes_single$ac, complete = agnes_complete$ac, average = agnes_average$ac, ward = agnes_ward$ac)
+coefficients
+
+best_method <- names(which.max(coefficients))
+best_method
+```
+## Dendrogram for best method
+```{r}
+plot(agnes_ward, which.plots = 2, main = "Dendrogram - Ward's Method")
+```
+### Interpretation of Results
+Ward's method typically produces compact, spherical clusters and often has the highest agglomerative coefficient, indicating strong clustering structure. Based on the dendrogram, cutting the tree at 4 clusters seems optimal because it finds a balance between interpretability and separation.
+
+- **Cluster 1**: High fiber, low sugar cereals (e.g., bran-based cereals) – likely the healthiest.
+- **Cluster 2**: Moderate sugar and fiber, balanced nutrients.
+- **Cluster 3**: High sugar, low fiber cereals – less healthy, often marketed to children.
+- **Cluster 4**: Mixed cereals with moderate ratings and nutrients.
+
+Healthy cereals for schools should come from Cluster 1, as they have high fiber, low sugar, and good ratings.
+
+## Determine number of clusters
+```{r}
+clusters <- cutree(as.hclust(agnes_ward), k = 4)
+table(clusters)
+```
+## Summary table of healthy cereals (Cluster 1)
+```{r}
+healthy_cereals <- cereals_clean[clusters == 1, c("name", "calories", "protein", "fat", "fiber", "sugars", "rating")]
+kable(healthy_cereals, caption = "Healthy Cereals in Cluster 1")
+```
+## Cluster stability check
+```{r}
+set.seed(123)
+index <- sample(1:nrow(numeric_scaled), size = floor(0.5 * nrow(numeric_scaled)))
+partA <- numeric_scaled[index, ]
+partB <- numeric_scaled[-index, ]
+
+agnes_A <- agnes(partA, method = "ward")
+clusters_A <- cutree(as.hclust(agnes_A), k = 4)
+
+centroids <- aggregate(partA, by = list(cluster = clusters_A), FUN = mean)
+assign_to_centroid <- function(row, centroids) {
+  dists <- apply(centroids[,-1], 1, function(centroid) sum((row - centroid)^2))
+  return(which.min(dists))
+}
+assigned_B <- apply(partB, 1, assign_to_centroid, centroids = centroids)
+assigned_B
+```
+## Healthy cereals cluster summary
+```{r}
+aggregate(numeric_scaled, by = list(cluster = clusters), FUN = mean)
+```
+### Should data be normalized?
+Yes, normalization of data is important because variables are on different scales (such as sodium versus fiber). Without the normalization process, clustering would be dominated by variables with large ranges ultimately skewing statistical significance and results.
